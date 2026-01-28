@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>건설공사 법정서류 판정 시스템 | (주)더베스트안전</title>
+  <meta name="description" content="건설공사 법정서류 판정 시스템 - 공사 정보를 입력하면 안전관리계획서, 유해위험방지계획서 등 필요한 법정서류를 자동으로 판정합니다.">
+  <meta name="keywords" content="안전관리계획서, 유해위험방지계획서, 소규모안전관리계획서, 건설안전, 법정서류, 더베스트안전">
+  <meta property="og:title" content="건설공사 법정서류 판정 시스템 | (주)더베스트안전">
+  <meta property="og:description" content="공사 정보 입력만으로 필요한 법정서류를 자동 판정합니다. Safety Law OS v2.2 기반.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* 더베스트안전 CI 컬러 (2026.01 업데이트) */
+      --brand-primary: #162759;
+      --brand-secondary: #1e3a7a;
+      --brand-dark: #0d1a3d;
+      --ci-gray: #929294;
+      --ci-gray-light: #bebebe;
+
+      /* UI 컬러 */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --border-light: #f1f5f9;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #929294;
+
+      /* 액센트 컬러 */
+      --blue: #2563eb;
+      --blue-light: #3b82f6;
+      --green: #16a34a;
+      --orange: #ea580c;
+      --red: #dc2626;
+      --yellow: #ca8a04;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.7;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+
+    /* Header - 더베스트안전 브랜드 적용 */
+    .header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+      color: white;
+      margin: -40px -24px 40px -24px;
+    }
+    .header-logo {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    .header p { font-size: 15px; opacity: 0.9; }
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+
+    /* Step Indicator */
+    .steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .step.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+    .step.done { background: var(--green); border-color: var(--green); color: white; }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .step.active .step-num, .step.done .step-num { background: rgba(255,255,255,0.2); }
+
+    /* Screens */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Type Selection */
+    .type-section { text-align: center; padding: 40px 0; }
+    .type-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--brand-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .type-subtitle { font-size: 15px; color: var(--text-secondary); margin-bottom: 40px; }
+    .type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 500px; margin: 0 auto; }
+    .type-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .type-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(16,43,125,0.12);
+    }
+    .type-card.selected { border-color: var(--brand-primary); background: rgba(16,43,125,0.03); }
+    .type-icon { font-size: 48px; margin-bottom: 16px; }
+    .type-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .type-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Role Selection */
+    .role-section { text-align: center; padding: 40px 0; }
+    .role-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--brand-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .role-subtitle { font-size: 15px; color: var(--text-secondary); margin-bottom: 40px; }
+    .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 700px; margin: 0 auto; }
+    @media (max-width: 600px) { .role-grid { grid-template-columns: 1fr; max-width: 300px; } }
+    .role-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .role-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(16,43,125,0.12);
+    }
+    .role-card.selected { border-color: var(--brand-primary); background: rgba(16,43,125,0.03); }
+    .role-icon { font-size: 48px; margin-bottom: 16px; }
+    .role-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .role-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .role-examples { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-secondary);
+    }
+    .card-icon { font-size: 20px; }
+    .card-title { font-size: 15px; font-weight: 700; }
+    .card-body { padding: 20px; }
+
+    /* Alert Box */
+    .alert-box {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .alert-box.info { background: #dbeafe; border-color: #93c5fd; }
+    .alert-box.warning { background: #fef3c7; border-color: #fcd34d; }
+    .alert-box.error { background: #fee2e2; border-color: #fca5a5; }
+    .alert-icon { font-size: 20px; flex-shrink: 0; }
+    .alert-content { flex: 1; }
+    .alert-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .alert-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 700px) { .form-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: span 3; }
+    @media (max-width: 700px) { .form-group.full { grid-column: span 2; } }
+    @media (max-width: 500px) { .form-group.full { grid-column: span 1; } }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    .form-input, .form-select {
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(16,43,125,0.1);
+    }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Checkbox */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 20px 0 10px;
+    }
+    .section-subtitle { font-size: 11px; color: var(--text-muted); margin-top: -6px; margin-bottom: 10px; }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    @media (max-width: 700px) { .checkbox-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 500px) { .checkbox-grid { grid-template-columns: repeat(2, 1fr); } }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .checkbox-item:hover { border-color: var(--blue); }
+    .checkbox-item.checked {
+      border-color: var(--brand-primary);
+      background: rgba(16,43,125,0.05);
+      color: var(--text-primary);
+    }
+    .checkbox-item input { display: none; }
+    .checkbox-box {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .checkbox-item.checked .checkbox-box { background: var(--brand-primary); border-color: var(--brand-primary); }
+    .checkbox-box::after { content: '✓'; color: white; font-size: 10px; opacity: 0; }
+    .checkbox-item.checked .checkbox-box::after { opacity: 1; }
+
+    /* Sub Options */
+    .sub-options { margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 8px; display: none; }
+    .sub-options.show { display: block; }
+    .sub-options .checkbox-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Buttons */
+    .btn-group { display: flex; gap: 12px; margin-top: 24px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--brand-primary); color: white; }
+    .btn-primary:hover { background: var(--brand-secondary); transform: translateY(-2px); }
+    .btn-secondary { background: white; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-secondary:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Results */
+    .result-header {
+      background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+      border-radius: 16px;
+      padding: 24px;
+      color: white;
+      margin-bottom: 24px;
+    }
+    .result-role { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .result-role-icon { font-size: 32px; }
+    .result-role-name { font-size: 20px; font-weight: 800; }
+    .result-role-badge { font-size: 12px; opacity: 0.8; }
+    .result-info { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; opacity: 0.9; }
+    .result-stat { display: flex; align-items: center; gap: 20px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 28px; font-weight: 800; }
+    .stat-label { font-size: 11px; opacity: 0.8; }
+
+    /* Trigger Info */
+    .trigger-info {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .trigger-info-title { font-size: 14px; font-weight: 700; color: #166534; margin-bottom: 8px; }
+    .trigger-list { font-size: 13px; color: #15803d; padding-left: 0; list-style: none; }
+    .trigger-list li { margin-bottom: 4px; padding-left: 16px; position: relative; }
+    .trigger-list li::before { content: '•'; position: absolute; left: 0; color: #22c55e; }
+
+    /* Phase Group */
+    .timeline { margin-bottom: 24px; }
+    .timeline-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .timeline-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .timeline-count {
+      background: var(--brand-primary);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .phase-group { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .phase-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .phase-group-header.phase-plan { background: #fef3c7; color: #b45309; }
+    .phase-group-header.phase-design { background: #e0e7ff; color: #3730a3; }
+    .phase-group-header.phase-pre { background: #fef3c7; color: #b45309; }
+    .phase-group-header.phase-start { background: #dbeafe; color: #1e40af; }
+    .phase-group-header.phase-during { background: #d1fae5; color: #065f46; }
+    .phase-group-header.phase-end { background: #e0e7ff; color: #3730a3; }
+    .phase-group-count { font-size: 12px; opacity: 0.8; }
+    .phase-group-body { background: white; }
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .doc-item:last-child { border-bottom: none; }
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .doc-law { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .doc-trigger { font-size: 10px; color: var(--brand-primary); margin-top: 2px; }
+    .doc-arrow { font-size: 12px; color: var(--text-muted); }
+    .doc-target { font-size: 12px; color: var(--brand-primary); font-weight: 500; }
+
+    /* Request Section */
+    .request-section { margin-bottom: 24px; }
+    .request-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 12px 12px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .request-icon { font-size: 24px; }
+    .request-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .request-count {
+      background: var(--blue);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .request-body { border: 1px solid var(--border); border-radius: 0 0 12px 12px; }
+    .request-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .request-item:last-child { border-bottom: none; }
+    .request-doc { flex: 1; }
+    .request-doc-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .request-doc-law { font-size: 11px; color: var(--text-muted); }
+    .request-timing {
+      font-size: 12px;
+      color: var(--orange);
+      background: rgba(234,88,12,0.1);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-top: 32px;
+    }
+    .cta-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 8px;
+    }
+    .cta-subtitle { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+    .cta-features { display: flex; justify-content: center; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
+    .cta-feature { font-size: 13px; color: var(--text-secondary); }
+    .cta-feature::before { content: '✓ '; color: var(--green); font-weight: bold; }
+    .cta-btn {
+      padding: 14px 40px;
+      background: var(--brand-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .cta-btn:hover { background: var(--brand-secondary); transform: translateY(-2px); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .modal-body { padding: 24px; }
+    .modal-form { display: flex; flex-direction: column; gap: 16px; }
+    .modal-form .form-label { margin-bottom: 6px; display: block; }
+    .modal-form .form-input, .modal-form .form-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    .modal-form .form-textarea { min-height: 80px; resize: vertical; }
+    .modal-info {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .modal-info-title { font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .modal-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--brand-primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: inherit;
+    }
+    .modal-submit:hover { background: var(--brand-secondary); }
+    .modal-note { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+
+    /* Consult Box */
+    .consult-box {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .consult-icon { font-size: 48px; margin-bottom: 16px; }
+    .consult-title { font-size: 20px; font-weight: 800; color: #92400e; margin-bottom: 8px; }
+    .consult-text { font-size: 14px; color: #78350f; margin-bottom: 20px; line-height: 1.7; }
+    .consult-btn {
+      padding: 14px 40px;
+      background: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .consult-btn:hover { background: #d97706; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    .footer a { color: var(--brand-primary); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Print Styles */
+    @media print {
+      .header { margin: 0; padding: 24px; }
+      .steps, .btn-group, .cta-section, .footer { display: none; }
+      .container { padding: 0; }
+      .result-header { page-break-inside: avoid; }
+      .phase-group { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-logo">(주)더베스트안전</div>
+      <h1>건설공사 법정서류 판정 시스템</h1>
+      <p>공사 정보를 입력하면 필요한 서류를 안내해드립니다</p>
+      <span class="header-badge">v8.0 · Safety Law OS v2.2 기반</span>
+    </header>
+
+    <div class="steps">
+      <div class="step active" id="step1"><span class="step-num">1</span>공사유형</div>
+      <div class="step" id="step2"><span class="step-num">2</span>역할선택</div>
+      <div class="step" id="step3"><span class="step-num">3</span>정보입력</div>
+      <div class="step" id="step4"><span class="step-num">4</span>결과확인</div>
+    </div>
+
+    <!-- Screen 1: Type Selection -->
+    <div class="screen active" id="screen-type">
+      <div class="type-section">
+        <div class="type-title">공사 유형을 선택하세요</div>
+        <div class="type-subtitle">건축공사와 토목공사는 적용 법령이 다릅니다</div>
+        <div class="type-grid">
+          <div class="type-card" onclick="selectType('building')">
+            <div class="type-icon">🏢</div>
+            <div class="type-name">건축공사</div>
+            <div class="type-desc">건축물 신축·증축·<br>리모델링·해체</div>
+          </div>
+          <div class="type-card" onclick="selectType('civil')">
+            <div class="type-icon">🛤️</div>
+            <div class="type-name">토목공사</div>
+            <div class="type-desc">도로·교량·터널·<br>하수도·배수로 등</div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-next-type" disabled onclick="goToRole()">다음 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Role Selection -->
+    <div class="screen" id="screen-role">
+      <div class="role-section">
+        <div class="role-title">역할을 선택하세요</div>
+        <div class="role-subtitle">선택한 역할에 맞는 서류를 안내해드립니다</div>
+        <div class="role-grid">
+          <div class="role-card" onclick="selectRole('client')">
+            <div class="role-icon">👔</div>
+            <div class="role-name">발주자</div>
+            <div class="role-desc">공사를 발주하고<br>전체를 관리합니다</div>
+            <div class="role-examples">발주청, 건축주, CM</div>
+          </div>
+          <div class="role-card" onclick="selectRole('designer')">
+            <div class="role-icon">📐</div>
+            <div class="role-name">설계사</div>
+            <div class="role-desc">설계 단계 서류를<br>작성합니다</div>
+            <div class="role-examples">설계사, 건축사, 구조기술사</div>
+          </div>
+          <div class="role-card" onclick="selectRole('contractor')">
+            <div class="role-icon">🏗️</div>
+            <div class="role-name">시공사</div>
+            <div class="role-desc">착공부터 준공까지<br>서류를 작성합니다</div>
+            <div class="role-examples">건설사, 현장소장, 안전관리자</div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="goToType()">← 공사유형</button>
+          <button class="btn btn-primary" id="btn-next-role" disabled onclick="goToInput()">다음 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 3-A: Input (Building) -->
+    <div class="screen" id="screen-input-building">
+      <div class="alert-box warning" id="alert-complex" style="display:none;">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <div class="alert-title">참고 안내</div>
+          <div class="alert-text">증축·개축·대수선 공사는 기존 건물 상태에 따라 필요 서류가 달라질 수 있습니다. 본 결과는 참고용으로만 활용해주세요.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-icon">📋</span><span class="card-title">공사 기본 정보</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">총 공사금액 (억원)</label>
+              <input type="number" id="projectCost" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">상시 근로자 수</label>
+              <input type="number" id="workers" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">공사 종류</label>
+              <select id="constructionType" class="form-select" onchange="checkComplexType()">
+                <option value="new">신축</option>
+                <option value="extension">증축</option>
+                <option value="rebuild">개축</option>
+                <option value="repair">대수선</option>
+                <option value="remodel">리모델링</option>
+                <option value="demolition">해체</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">발주 유형</label>
+              <select id="clientType" class="form-select">
+                <option value="public">공공발주</option>
+                <option value="private">민간발주</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">공사 지역</label>
+              <select id="region" class="form-select">
+                <option value="seoul">서울특별시</option>
+                <option value="busan">부산광역시</option>
+                <option value="other">기타 지역</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">시설 용도</label>
+              <select id="facilityUse" class="form-select">
+                <option value="none">일반</option>
+                <option value="apartment">공동주택</option>
+                <option value="neighborhood1">제1종 근린생활</option>
+                <option value="neighborhood2">제2종 근린생활</option>
+                <option value="cultural">문화/집회시설</option>
+                <option value="religious">종교시설</option>
+                <option value="sales">판매시설</option>
+                <option value="transport">운수시설</option>
+                <option value="medical">종합병원</option>
+                <option value="accommodation">관광숙박</option>
+                <option value="undergroundMall">지하도상가</option>
+                <option value="factory">공장</option>
+                <option value="factoryIndustrial">공장(산업단지 내)</option>
+                <option value="warehouse">창고</option>
+                <option value="coldStorage">냉동냉장창고</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-icon">🏢</span><span class="card-title">건축물 규모</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">지상 층수</label>
+              <input type="number" id="floorsAbove" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">지하 층수</label>
+              <input type="number" id="floorsBelow" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">건물 높이 (m)</label>
+              <input type="number" id="buildingHeight" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">연면적 (㎡)</label>
+              <input type="number" id="totalArea" class="form-input" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">굴착 깊이 (m)</label>
+              <input type="number" id="excavationDepth" class="form-input" value="0" min="0">
+              <span class="form-hint">※ 집수정, E/V피트, 정화조는 제외</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">교량 최대지간 (m)</label>
+              <input type="number" id="bridgeSpan" class="form-input" value="0" min="0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-icon">🚧</span><span class="card-title">해당 항목 체크</span></div>
+        <div class="card-body">
+          <div class="section-title">건설기계</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-towerCrane" onclick="toggleCheckbox('towerCrane')"><input type="checkbox" id="towerCrane"><span class="checkbox-box"></span>타워크레인</label>
+            <label class="checkbox-item" id="label-pileDriver" onclick="toggleCheckbox('pileDriver')"><input type="checkbox" id="pileDriver"><span class="checkbox-box"></span>항타·항발기</label>
+            <label class="checkbox-item" id="label-drillMachine" onclick="toggleCheckbox('drillMachine')"><input type="checkbox" id="drillMachine"><span class="checkbox-box"></span>천공기 (10m↑)</label>
+          </div>
+
+          <div class="section-title">가설구조물</div>
+          <div class="section-subtitle">※ 해당 기준 이상 사용 시 안전관리계획서 대상</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-scaffoldHigh" onclick="toggleCheckbox('scaffoldHigh')"><input type="checkbox" id="scaffoldHigh"><span class="checkbox-box"></span>비계 31m↑</label>
+            <label class="checkbox-item" id="label-bracketScaffold" onclick="toggleCheckbox('bracketScaffold')"><input type="checkbox" id="bracketScaffold"><span class="checkbox-box"></span>브라켓 비계</label>
+            <label class="checkbox-item" id="label-formworkHigh" onclick="toggleCheckbox('formworkHigh')"><input type="checkbox" id="formworkHigh"><span class="checkbox-box"></span>거푸집 5m↑</label>
+            <label class="checkbox-item" id="label-shoringHigh" onclick="toggleCheckbox('shoringHigh')"><input type="checkbox" id="shoringHigh"><span class="checkbox-box"></span>동바리 5m↑</label>
+            <label class="checkbox-item" id="label-earthRetaining" onclick="toggleCheckbox('earthRetaining')"><input type="checkbox" id="earthRetaining"><span class="checkbox-box"></span>흙막이 지보공 2m↑</label>
+            <label class="checkbox-item" id="label-tunnelSupport" onclick="toggleCheckbox('tunnelSupport')"><input type="checkbox" id="tunnelSupport"><span class="checkbox-box"></span>터널 지보공</label>
+            <label class="checkbox-item" id="label-externalWork" onclick="toggleCheckbox('externalWork')"><input type="checkbox" id="externalWork"><span class="checkbox-box"></span>외부작업용 일체형 10m↑ (SWC, RCS, ACS, Workflat, Form)</label>
+            <label class="checkbox-item" id="label-complexTemp" onclick="toggleCheckbox('complexTemp')"><input type="checkbox" id="complexTemp"><span class="checkbox-box"></span>복합형(현장제작) - 합벽지지대, 라이닝폼, 작업대차 등</label>
+          </div>
+
+          <div class="section-title">폭발물 사용</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-explosives" onclick="toggleExplosives()"><input type="checkbox" id="explosives"><span class="checkbox-box"></span>폭발물 사용</label>
+          </div>
+          <div class="sub-options" id="explosives-options">
+            <div class="checkbox-grid">
+              <label class="checkbox-item" id="label-explosivesNearFacility" onclick="toggleCheckbox('explosivesNearFacility')"><input type="checkbox" id="explosivesNearFacility"><span class="checkbox-box"></span>20m 내 시설물</label>
+              <label class="checkbox-item" id="label-explosivesNearLivestock" onclick="toggleCheckbox('explosivesNearLivestock')"><input type="checkbox" id="explosivesNearLivestock"><span class="checkbox-box"></span>100m 내 가축사육</label>
+            </div>
+          </div>
+
+          <div class="section-title">공사 유형</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-tunnelWork" onclick="toggleCheckbox('tunnelWork')"><input type="checkbox" id="tunnelWork"><span class="checkbox-box"></span>터널 공사</label>
+            <label class="checkbox-item" id="label-damWork" onclick="toggleCheckbox('damWork')"><input type="checkbox" id="damWork"><span class="checkbox-box"></span>댐 공사</label>
+            <label class="checkbox-item" id="label-demolitionWork" onclick="toggleCheckbox('demolitionWork')"><input type="checkbox" id="demolitionWork"><span class="checkbox-box"></span>해체공사 포함</label>
+            <label class="checkbox-item" id="label-verticalExtension" onclick="toggleCheckbox('verticalExtension')"><input type="checkbox" id="verticalExtension"><span class="checkbox-box"></span>수직증축 리모델링</label>
+          </div>
+
+          <div class="section-title">유해·위험 작업</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-confinedSpace" onclick="toggleCheckbox('confinedSpace')"><input type="checkbox" id="confinedSpace"><span class="checkbox-box"></span>밀폐공간</label>
+            <label class="checkbox-item" id="label-hotWork" onclick="toggleCheckbox('hotWork')"><input type="checkbox" id="hotWork"><span class="checkbox-box"></span>화기 작업</label>
+            <label class="checkbox-item" id="label-electricWork" onclick="toggleCheckbox('electricWork')"><input type="checkbox" id="electricWork"><span class="checkbox-box"></span>전기 작업</label>
+            <label class="checkbox-item" id="label-craneWork" onclick="toggleCheckbox('craneWork')"><input type="checkbox" id="craneWork"><span class="checkbox-box"></span>양중기 작업</label>
+            <label class="checkbox-item" id="label-chemicalUsage" onclick="toggleCheckbox('chemicalUsage')"><input type="checkbox" id="chemicalUsage"><span class="checkbox-box"></span>화학물질</label>
+            <label class="checkbox-item" id="label-hazardousWork" onclick="toggleCheckbox('hazardousWork')"><input type="checkbox" id="hazardousWork"><span class="checkbox-box"></span>유해인자</label>
+          </div>
+
+          <div class="section-title">기타</div>
+          <div class="checkbox-grid">
+            <label class="checkbox-item" id="label-hasSubcontractor" onclick="toggleCheckbox('hasSubcontractor')"><input type="checkbox" id="hasSubcontractor"><span class="checkbox-box"></span>하도급 있음</label>
+            <label class="checkbox-item" id="label-nearSchool" onclick="toggleCheckbox('nearSchool')"><input type="checkbox" id="nearSchool"><span class="checkbox-box"></span>학교 인접</label>
+            <label class="checkbox-item" id="label-dustWork" onclick="toggleCheckbox('dustWork')"><input type="checkbox" id="dustWork"><span class="checkbox-box"></span>비산먼지 발생</label>
+            <label class="checkbox-item" id="label-coldStorageWork" onclick="toggleCheckbox('coldStorageWork')"><input type="checkbox" id="coldStorageWork"><span class="checkbox-box"></span>냉동창고 설비/단열</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToRole()">← 역할 변경</button>
+        <button class="btn btn-primary" onclick="checkDocuments()">서류 판정하기</button>
+      </div>
+    </div>
+
+    <!-- Screen 3-B: Input (Civil) -->
+    <div class="screen" id="screen-input-civil">
+      <div class="consult-box">
+        <div class="consult-icon">🛤️</div>
+        <div class="consult-title">토목공사 전문 상담 안내</div>
+        <div class="consult-text">
+          토목공사(도로, 교량, 터널, 하수도, 배수로 등)는<br>
+          공종별 특성에 따라 필요 서류가 크게 달라집니다.<br><br>
+          정확한 판정을 위해 <strong>전문가 상담</strong>을 권장합니다.
+        </div>
+        <button class="consult-btn" onclick="openCivilQuoteModal()">전문가 상담 요청</button>
+      </div>
+
+      <div class="alert-box info">
+        <span class="alert-icon">💡</span>
+        <div class="alert-content">
+          <div class="alert-title">토목공사 주요 법정서류</div>
+          <div class="alert-text">
+            • 안전관리계획서 (건진법 §62)<br>
+            • 유해위험방지계획서 (산안법 §42)<br>
+            • 품질관리/시험계획서 (건진법 §55)<br>
+            • 지하안전영향평가 (지하안전법 §14, 굴착 20m↑)<br>
+            • 환경영향평가 (환경영향평가법)<br>
+            ※ 공종·규모에 따라 달라집니다
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="goToRole()">← 역할 변경</button>
+        <button class="btn btn-secondary" onclick="goToType()">공사유형 변경</button>
+      </div>
+    </div>
+
+    <!-- Screen 4: Results -->
+    <div class="screen" id="screen-result">
+      <div id="result-content"></div>
+    </div>
+
+    <footer class="footer">
+      <p>© 2025 (주)더베스트안전. 본 시스템의 판정 결과는 참고용이며, 최종 판단은 관련 법령 및 관할 기관 확인이 필요합니다.</p>
+      <p style="margin-top:8px;">
+        <a href="https://www.thebestsafety.co.kr" target="_blank">www.thebestsafety.co.kr</a> |
+        대표번호 <a href="tel:1551-7187">1551-7187</a>
+      </p>
+      <p style="margin-top:8px;font-size:11px;">법령 기준: 2025.10.1 시행령 | Safety Law OS v2.2 기반</p>
+    </footer>
+  </div>
+
+  <!-- Quote Modal -->
+  <div class="modal-overlay" id="quoteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">견적 문의</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form">
+          <div class="modal-info">
+            <div class="modal-info-title">자동 입력된 정보</div>
+            <div id="modal-auto-info"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">공사명 *</label>
+            <input type="text" id="quoteName" class="form-input" placeholder="예: OO아파트 신축공사">
+          </div>
+          <div class="form-group">
+            <label class="form-label">회사명</label>
+            <input type="text" id="quoteCompany" class="form-input" placeholder="회사명">
+          </div>
+          <div class="form-group">
+            <label class="form-label">담당자 *</label>
+            <input type="text" id="quoteContact" class="form-input" placeholder="담당자 성함">
+          </div>
+          <div class="form-group">
+            <label class="form-label">연락처 *</label>
+            <input type="tel" id="quotePhone" class="form-input" placeholder="010-0000-0000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">이메일</label>
+            <input type="email" id="quoteEmail" class="form-input" placeholder="email@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">요청사항</label>
+            <textarea id="quoteNote" class="form-textarea" placeholder="추가 요청사항이 있으시면 입력해주세요"></textarea>
+          </div>
+          <button class="modal-submit" onclick="sendQuote()">견적 요청하기</button>
+          <p class="modal-note">상담신청 페이지로 이동합니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Civil Quote Modal -->
+  <div class="modal-overlay" id="civilQuoteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">토목공사 상담 요청</span>
+        <button class="modal-close" onclick="closeCivilModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-form">
+          <div class="form-group">
+            <label class="form-label">공사명 *</label>
+            <input type="text" id="civilName" class="form-input" placeholder="예: OO도로 확장공사">
+          </div>
+          <div class="form-group">
+            <label class="form-label">공사 종류 *</label>
+            <select id="civilType" class="form-select">
+              <option value="">선택하세요</option>
+              <option value="road">도로공사</option>
+              <option value="bridge">교량공사</option>
+              <option value="tunnel">터널공사</option>
+              <option value="sewer">하수도공사</option>
+              <option value="drainage">배수로공사</option>
+              <option value="dam">댐공사</option>
+              <option value="port">항만공사</option>
+              <option value="other">기타</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">총 공사금액 (억원)</label>
+            <input type="number" id="civilCost" class="form-input" placeholder="예: 100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">회사명</label>
+            <input type="text" id="civilCompany" class="form-input" placeholder="회사명">
+          </div>
+          <div class="form-group">
+            <label class="form-label">담당자 *</label>
+            <input type="text" id="civilContact" class="form-input" placeholder="담당자 성함">
+          </div>
+          <div class="form-group">
+            <label class="form-label">연락처 *</label>
+            <input type="tel" id="civilPhone" class="form-input" placeholder="010-0000-0000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">문의 내용</label>
+            <textarea id="civilNote" class="form-textarea" placeholder="필요한 서류나 궁금한 점을 입력해주세요"></textarea>
+          </div>
+          <button class="modal-submit" onclick="sendCivilQuote()">상담 요청하기</button>
+          <p class="modal-note">상담신청 페이지로 이동합니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== 상태 ==========
+    let selectedType = null;
+    let selectedRole = null;
+    let currentData = null;
+    let myDocs = [];
+    let fromDocs = { client: [], designer: [], contractor: [] };
+    let toDocs = { client: [], designer: [], contractor: [] };
+
+    const ROLE_NAMES = { client: '발주자', designer: '설계사', contractor: '시공사' };
+    const ROLE_ICONS = { client: '👔', designer: '📐', contractor: '🏗️' };
+    const PHASE_NAMES = { plan: '계획단계', design: '설계단계', pre: '착공 전', start: '착공 시', during: '공사 중', end: '준공' };
+    const PHASE_CLASS = { plan: 'phase-plan', design: 'phase-design', pre: 'phase-pre', start: 'phase-start', during: 'phase-during', end: 'phase-end' };
+
+    // ========== 서류 DB (v8.0 - Safety Law OS v2.2 기반) ==========
+    const DOCUMENTS = [
+      // ===== 발주자 서류 =====
+      { id:'basicSafetyLedger', name:'기본안전보건대장', law:'산안법 §67, 시행령 §55', writer:'client', phase:'plan', to:'designer', toPhase:'설계계약 시 제공', cond: d => d.projectCost >= 50 },
+      { id:'periodReview', name:'공사기간 적정성 검토', law:'건진법 §45의2', writer:'client', phase:'pre', to:'contractor', toPhase:'착공 전 제공', cond: d => d.clientType==='public' && d.projectCost >= 100 },
+
+      // ===== 설계사 서류 =====
+      { id:'designSafetyLedger', name:'설계안전보건대장', law:'산안법 §67', writer:'designer', phase:'design', to:'client', toPhase:'설계 완료 시', cond: d => d.projectCost >= 50 },
+      { id:'dfs', name:'설계안전성검토보고서 (DFS)', law:'건진법 §62⑱', writer:'designer', phase:'design', to:'contractor', toPhase:'착공 전', cond: d => d.clientType==='public' && d.triggers.ctp.length > 0 },
+      { id:'undergroundSafetyEval', name:'지하안전영향평가', law:'지하안전법 §14', writer:'designer', phase:'design', to:'client', toPhase:'착공 전 협의', cond: d => d.excavationDepth >= 20 },
+      { id:'undergroundSafetyEvalSmall', name:'소규모 지하안전영향평가', law:'지하안전법 §23', writer:'designer', phase:'design', to:'client', toPhase:'착공 전 협의', cond: d => d.excavationDepth >= 10 && d.excavationDepth < 20 },
+      { id:'demolitionPlanDesign', name:'해체계획서 (건축물관리법)', law:'건축물관리법 §30', writer:'designer', phase:'design', to:'contractor', toPhase:'해체 허가 시', cond: d => d.constructionType==='demolition' || d.demolitionWork },
+
+      // ===== 시공사 서류 - 착공 전 =====
+      { id:'ctp', name:'안전관리계획서', law:'건진법 §62, 시행령 §98', writer:'contractor', phase:'pre', to:'client', toPhase:'발주자 승인',
+        cond: d => d.triggers.ctp.length > 0,
+        triggerDesc: d => d.triggers.ctp.length > 0 ? `대상사유: ${d.triggers.ctp.join(', ')}` : '' },
+      { id:'smp', name:'소규모안전관리계획서', law:'건진법 §62의2, 시행령 §101의5', writer:'contractor', phase:'pre', to:'client', toPhase:'발주자 제출',
+        cond: d => d.triggers.smp.length > 0 && d.triggers.ctp.length === 0,
+        triggerDesc: d => d.triggers.smp.length > 0 ? `대상사유: ${d.triggers.smp.join(', ')}` : '' },
+      { id:'hrp', name:'유해위험방지계획서', law:'산안법 §42, 시행령 §42③', writer:'contractor', phase:'pre', toPhase:'공단 제출 (착공 전날까지)',
+        cond: d => d.triggers.hrp.length > 0,
+        triggerDesc: d => d.triggers.hrp.length > 0 ? `대상사유: ${d.triggers.hrp.join(', ')}` : '' },
+      { id:'constructionSafetyLedger', name:'공사안전보건대장', law:'산안법 §67', writer:'contractor', phase:'pre', to:'client', toPhase:'착공 전날까지', cond: d => d.projectCost >= 50 },
+      { id:'qualityPlan', name:'품질관리계획서', law:'건진법 §55', writer:'contractor', phase:'pre', to:'client', toPhase:'발주자 승인', cond: d => d.projectCost >= 500 || d.totalArea >= 30000 },
+      { id:'qualityTestPlan', name:'품질시험계획서', law:'건진법 §55', writer:'contractor', phase:'pre', cond: d => d.projectCost < 500 && (d.projectCost >= 5 || d.totalArea >= 660) },
+      { id:'tempStructureReview', name:'가설구조물 구조검토서', law:'건진법 §62, 시행령 §101의2', writer:'contractor', phase:'pre',
+        cond: d => d.scaffoldHigh || d.bracketScaffold || d.formworkHigh || d.shoringHigh || d.earthRetaining || d.tunnelSupport || d.externalWork || d.complexTemp,
+        triggerDesc: d => {
+          const items = [];
+          if (d.scaffoldHigh) items.push('비계 31m↑');
+          if (d.bracketScaffold) items.push('브라켓 비계');
+          if (d.formworkHigh) items.push('거푸집 5m↑');
+          if (d.shoringHigh) items.push('동바리 5m↑');
+          if (d.earthRetaining) items.push('흙막이 2m↑');
+          if (d.tunnelSupport) items.push('터널 지보공');
+          if (d.externalWork) items.push('외부작업용 일체형 10m↑ (SWC, RCS, ACS, Workflat, Form)');
+          if (d.complexTemp) items.push('복합형(현장제작) - 합벽지지대, 라이닝폼, 작업대차 등');
+          return items.length > 0 ? `대상: ${items.join(', ')}` : '';
+        }
+      },
+
+      // ===== 시공사 서류 - 착공 시 =====
+      { id:'constructionReport', name:'착공신고서', law:'건축법 §21', writer:'contractor', phase:'start', toPhase:'허가청 제출', cond: d => d.floorsAbove >= 1 || d.totalArea >= 100 },
+      { id:'directConstructionPlan', name:'직접시공계획서', law:'건산법 §28의2', writer:'contractor', phase:'start', cond: d => d.projectCost > 0 && d.projectCost < 70 },
+      { id:'towerCraneReport', name:'타워크레인 설치신고', law:'건설기계관리법', writer:'contractor', phase:'start', cond: d => d.towerCrane },
+      { id:'safetyManager', name:'안전관리자 선임', law:'산안법 §17', writer:'contractor', phase:'start', cond: d => d.workers >= 50 || d.projectCost >= 120 },
+      { id:'healthManager', name:'보건관리자 선임', law:'산안법 §18', writer:'contractor', phase:'start', cond: d => d.workers >= 50 || d.projectCost >= 800 },
+      { id:'safetyOfficer', name:'안전보건총괄책임자', law:'산안법 §62', writer:'contractor', phase:'start', cond: d => d.hasSubcontractor && (d.workers >= 100 || d.projectCost >= 50) },
+
+      // ===== 시공사 서류 - 공사 중 =====
+      { id:'riskAssessment', name:'위험성평가', law:'산안법 §36', writer:'contractor', phase:'during', cond: () => true },
+      { id:'workerEducation', name:'근로자 안전보건교육', law:'산안법 §29', writer:'contractor', phase:'during', cond: () => true },
+      { id:'basicEducation', name:'기초안전보건교육', law:'산안법 §31', writer:'contractor', phase:'during', cond: () => true },
+      { id:'specialEducation', name:'특별안전보건교육', law:'산안법 §29③', writer:'contractor', phase:'during', cond: d => d.confinedSpace || d.hotWork || d.electricWork || d.craneWork },
+      { id:'safetyInspection', name:'안전점검표', law:'건진법 시행령 §100', writer:'contractor', phase:'during', cond: () => true },
+      { id:'safetyCommittee', name:'안전보건협의체', law:'산안법 §64', writer:'contractor', phase:'during', cond: d => d.hasSubcontractor },
+      { id:'workPermit', name:'작업허가서', law:'산안법 기준규칙', writer:'contractor', phase:'during', cond: d => d.confinedSpace || d.hotWork || d.electricWork },
+      { id:'confinedSpacePlan', name:'밀폐공간 작업 프로그램', law:'산안법 §619', writer:'contractor', phase:'during', cond: d => d.confinedSpace },
+      { id:'cranePlan', name:'양중기 작업계획서', law:'산안법 §38', writer:'contractor', phase:'during', cond: d => d.craneWork || d.towerCrane },
+      { id:'demolitionPlanSafety', name:'해체계획서 (산안법)', law:'산안법 §52', writer:'contractor', phase:'during', cond: d => d.constructionType==='demolition' || d.demolitionWork },
+      { id:'msds', name:'MSDS', law:'산안법 §114', writer:'contractor', phase:'during', cond: d => d.chemicalUsage },
+      { id:'equipmentInspection', name:'건설기계 안전검사', law:'건설기계관리법', writer:'contractor', phase:'during', cond: d => d.towerCrane || d.pileDriver || d.craneWork },
+      { id:'healthCheckup', name:'건강진단', law:'산안법 §129', writer:'contractor', phase:'during', cond: d => d.hazardousWork || d.chemicalUsage },
+      { id:'protectiveEquipment', name:'보호구 지급대장', law:'산안법 §32', writer:'contractor', phase:'during', cond: () => true },
+      { id:'emergencyPlan', name:'비상조치계획', law:'산안법 §37', writer:'contractor', phase:'during', cond: () => true },
+      { id:'envManagementPlan', name:'환경관리계획서', law:'대기환경보전법', writer:'contractor', phase:'during', cond: d => d.dustWork },
+      { id:'eduSafety', name:'교육시설 안전성평가', law:'교육시설법 §19', writer:'contractor', phase:'pre', cond: d => d.nearSchool },
+    ];
+
+    // ========== 화면 전환 ==========
+    function selectType(type) {
+      document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      selectedType = type;
+      document.getElementById('btn-next-type').disabled = false;
+    }
+
+    function selectRole(role) {
+      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      selectedRole = role;
+      document.getElementById('btn-next-role').disabled = false;
+    }
+
+    function goToType() {
+      showScreen('type');
+      updateSteps(1);
+    }
+
+    function goToRole() {
+      showScreen('role');
+      updateSteps(2);
+    }
+
+    function goToInput() {
+      if (selectedType === 'civil') {
+        showScreen('input-civil');
+      } else {
+        showScreen('input-building');
+      }
+      updateSteps(3);
+    }
+
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + name).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function updateSteps(current) {
+      for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById('step' + i);
+        step.classList.remove('active', 'done');
+        if (i < current) step.classList.add('done');
+        else if (i === current) step.classList.add('active');
+      }
+    }
+
+    function toggleCheckbox(id) {
+      const cb = document.getElementById(id);
+      const lbl = document.getElementById('label-' + id);
+      cb.checked = !cb.checked;
+      lbl.classList.toggle('checked', cb.checked);
+    }
+
+    function toggleExplosives() {
+      toggleCheckbox('explosives');
+      const cb = document.getElementById('explosives');
+      const options = document.getElementById('explosives-options');
+      if (cb.checked) {
+        options.classList.add('show');
+      } else {
+        options.classList.remove('show');
+        document.getElementById('explosivesNearFacility').checked = false;
+        document.getElementById('explosivesNearLivestock').checked = false;
+        document.getElementById('label-explosivesNearFacility').classList.remove('checked');
+        document.getElementById('label-explosivesNearLivestock').classList.remove('checked');
+      }
+    }
+
+    function checkComplexType() {
+      const ct = document.getElementById('constructionType').value;
+      const alertBox = document.getElementById('alert-complex');
+      if (['extension', 'rebuild', 'repair'].includes(ct)) {
+        alertBox.style.display = 'flex';
+      } else {
+        alertBox.style.display = 'none';
+      }
+    }
+
+    // ========== 데이터 수집 ==========
+    function getFormData() {
+      return {
+        projectCost: parseFloat(document.getElementById('projectCost').value) || 0,
+        workers: parseInt(document.getElementById('workers').value) || 0,
+        constructionType: document.getElementById('constructionType').value,
+        clientType: document.getElementById('clientType').value,
+        region: document.getElementById('region').value,
+        floorsAbove: parseInt(document.getElementById('floorsAbove').value) || 0,
+        floorsBelow: parseInt(document.getElementById('floorsBelow').value) || 0,
+        buildingHeight: parseFloat(document.getElementById('buildingHeight').value) || 0,
+        totalArea: parseFloat(document.getElementById('totalArea').value) || 0,
+        excavationDepth: parseFloat(document.getElementById('excavationDepth').value) || 0,
+        bridgeSpan: parseFloat(document.getElementById('bridgeSpan').value) || 0,
+        facilityUse: document.getElementById('facilityUse').value,
+        towerCrane: document.getElementById('towerCrane').checked,
+        pileDriver: document.getElementById('pileDriver').checked,
+        drillMachine: document.getElementById('drillMachine').checked,
+        scaffoldHigh: document.getElementById('scaffoldHigh').checked,
+        bracketScaffold: document.getElementById('bracketScaffold').checked,
+        formworkHigh: document.getElementById('formworkHigh').checked,
+        shoringHigh: document.getElementById('shoringHigh').checked,
+        earthRetaining: document.getElementById('earthRetaining').checked,
+        tunnelSupport: document.getElementById('tunnelSupport').checked,
+        externalWork: document.getElementById('externalWork').checked,
+        complexTemp: document.getElementById('complexTemp').checked,
+        explosives: document.getElementById('explosives').checked,
+        explosivesNearFacility: document.getElementById('explosivesNearFacility').checked,
+        explosivesNearLivestock: document.getElementById('explosivesNearLivestock').checked,
+        tunnelWork: document.getElementById('tunnelWork').checked,
+        damWork: document.getElementById('damWork').checked,
+        demolitionWork: document.getElementById('demolitionWork').checked,
+        verticalExtension: document.getElementById('verticalExtension').checked,
+        confinedSpace: document.getElementById('confinedSpace').checked,
+        hotWork: document.getElementById('hotWork').checked,
+        electricWork: document.getElementById('electricWork').checked,
+        craneWork: document.getElementById('craneWork').checked,
+        chemicalUsage: document.getElementById('chemicalUsage').checked,
+        hazardousWork: document.getElementById('hazardousWork').checked,
+        hasSubcontractor: document.getElementById('hasSubcontractor').checked,
+        nearSchool: document.getElementById('nearSchool').checked,
+        dustWork: document.getElementById('dustWork').checked,
+        coldStorageWork: document.getElementById('coldStorageWork').checked,
+      };
+    }
+
+    // ========== 트리거 계산 (Safety Law OS v2.2 기반) ==========
+    function calcTriggers(d) {
+      const ctp = [], smp = [], hrp = [];
+
+      // CTP - 건진법 시행령 §98
+      if (d.floorsAbove >= 21 || d.totalArea >= 50000 || d.damWork) ctp.push('1종 시설물');
+      if ((d.floorsAbove >= 16 && d.floorsAbove < 21) || (d.totalArea >= 30000 && d.totalArea < 50000)) ctp.push('2종 시설물');
+      if (d.excavationDepth >= 10) ctp.push('굴착 10m↑');
+      if (d.explosives && (d.explosivesNearFacility || d.explosivesNearLivestock)) ctp.push('폭발물 사용(주변영향)');
+      if (d.floorsAbove >= 10 && d.floorsAbove < 16) ctp.push('10~15층 건축물');
+      if (d.floorsAbove >= 10 && (d.constructionType === 'remodel' || d.constructionType === 'demolition')) ctp.push('10층↑ 리모델링/해체');
+      if (d.verticalExtension) ctp.push('수직증축 리모델링');
+      if (d.towerCrane) ctp.push('타워크레인');
+      if (d.pileDriver) ctp.push('항타·항발기');
+      if (d.drillMachine) ctp.push('천공기 10m↑');
+      if (d.scaffoldHigh) ctp.push('비계 31m↑');
+      if (d.bracketScaffold) ctp.push('브라켓 비계');
+      if (d.formworkHigh) ctp.push('거푸집 5m↑');
+      if (d.shoringHigh) ctp.push('동바리 5m↑');
+      if (d.earthRetaining) ctp.push('흙막이 지보공 2m↑');
+      if (d.tunnelSupport) ctp.push('터널 지보공');
+      if (d.externalWork) ctp.push('외부작업용 일체형 10m↑ (SWC, RCS, ACS, Workflat, Form)');
+      if (d.complexTemp) ctp.push('복합형(현장제작) - 합벽지지대, 라이닝폼, 작업대차 등');
+      if (d.tunnelWork) ctp.push('터널 공사');
+
+      // SMP - 건진법 시행령 §101의5
+      if (ctp.length === 0 && d.floorsAbove >= 2 && d.floorsAbove < 10) {
+        if (d.facilityUse === 'apartment' && d.totalArea >= 1000) smp.push('공동주택 1,000㎡↑');
+        if (d.facilityUse === 'neighborhood1' && d.totalArea >= 1000) smp.push('제1종 근생 1,000㎡↑');
+        if (d.facilityUse === 'neighborhood2' && d.totalArea >= 1000) smp.push('제2종 근생 1,000㎡↑');
+        if (d.facilityUse === 'factory' && d.totalArea >= 1000) smp.push('공장 1,000㎡↑');
+        if (d.facilityUse === 'factoryIndustrial' && d.totalArea >= 2000) smp.push('공장(산업단지) 2,000㎡↑');
+        if (d.facilityUse === 'warehouse' && d.totalArea >= 5000) smp.push('창고 5,000㎡↑');
+        if (d.region === 'seoul') {
+          if (d.excavationDepth >= 5) smp.push('서울시: 굴착 5m↑');
+          if (d.totalArea > 200) smp.push('서울시: 연면적 200㎡ 초과');
+        }
+      }
+
+      // HRP - 산안법 시행령 §42③
+      if (d.buildingHeight >= 31) hrp.push('높이 31m↑');
+      if (d.totalArea >= 30000) hrp.push('연면적 3만㎡↑');
+      const hrpFacilities = ['cultural', 'religious', 'sales', 'transport', 'medical', 'accommodation', 'undergroundMall', 'coldStorage'];
+      if (hrpFacilities.includes(d.facilityUse) && d.totalArea >= 5000) {
+        const names = { cultural:'문화/집회', religious:'종교', sales:'판매', transport:'운수', medical:'종합병원', accommodation:'관광숙박', undergroundMall:'지하도상가', coldStorage:'냉동냉장창고' };
+        hrp.push(`특정시설(${names[d.facilityUse]}) 5천㎡↑`);
+      }
+      if (d.coldStorageWork && d.totalArea >= 5000) hrp.push('냉동창고 설비/단열 5천㎡↑');
+      if (d.bridgeSpan >= 50) hrp.push('교량 지간 50m↑');
+      if (d.tunnelWork) hrp.push('터널');
+      if (d.damWork) hrp.push('댐');
+      if (d.excavationDepth >= 10) hrp.push('굴착 10m↑');
+
+      return { ctp, smp, hrp };
+    }
+
+    // ========== 판정 ==========
+    function checkDocuments() {
+      const data = getFormData();
+      data.triggers = calcTriggers(data);
+      currentData = data;
+
+      const allDocs = DOCUMENTS.filter(doc => doc.cond(data));
+      myDocs = allDocs.filter(doc => doc.writer === selectedRole);
+
+      fromDocs = { client: [], designer: [], contractor: [] };
+      toDocs = { client: [], designer: [], contractor: [] };
+
+      allDocs.forEach(doc => {
+        if (doc.writer !== selectedRole && doc.to === selectedRole) {
+          fromDocs[doc.writer].push(doc);
+        }
+        if (doc.writer === selectedRole && doc.to && doc.to !== selectedRole) {
+          toDocs[doc.to].push(doc);
+        }
+      });
+
+      if (selectedRole === 'contractor') {
+        const designLedger = allDocs.find(d => d.id === 'designSafetyLedger');
+        if (designLedger && !fromDocs.client.find(d => d.id === 'designSafetyLedger')) {
+          fromDocs.client.push({...designLedger, writer: 'client', toPhase: '착공 전 (발주자 경유)'});
+        }
+        const basicLedger = allDocs.find(d => d.id === 'basicSafetyLedger');
+        if (basicLedger && !fromDocs.client.find(d => d.id === 'basicSafetyLedger')) {
+          fromDocs.client.push({...basicLedger, toPhase: '입찰 시 고지'});
+        }
+      }
+
+      renderResults();
+      showScreen('result');
+      updateSteps(4);
+    }
+
+    // ========== 결과 렌더링 ==========
+    function renderResults() {
+      const d = currentData;
+      const ctNames = { new:'신축', extension:'증축', rebuild:'개축', repair:'대수선', remodel:'리모델링', demolition:'해체' };
+      const fromTotal = fromDocs.client.length + fromDocs.designer.length + fromDocs.contractor.length;
+      const toTotal = toDocs.client.length + toDocs.designer.length + toDocs.contractor.length;
+
+      let html = `
+        <div class="result-header">
+          <div class="result-role">
+            <span class="result-role-icon">${ROLE_ICONS[selectedRole]}</span>
+            <div>
+              <div class="result-role-name">${ROLE_NAMES[selectedRole]} 기준 판정 결과</div>
+              <div class="result-role-badge">${ctNames[d.constructionType]} · ${d.projectCost}억원 · ${d.floorsAbove}층 · ${d.totalArea.toLocaleString()}㎡</div>
+            </div>
+          </div>
+          <div class="result-stat">
+            <div class="stat-item"><div class="stat-value">${myDocs.length}</div><div class="stat-label">내가 작성</div></div>
+            <div class="stat-item"><div class="stat-value">${fromTotal}</div><div class="stat-label">받을 서류</div></div>
+            <div class="stat-item"><div class="stat-value">${toTotal}</div><div class="stat-label">제출할 곳</div></div>
+          </div>
+        </div>
+      `;
+
+      if (d.triggers.ctp.length > 0 || d.triggers.smp.length > 0 || d.triggers.hrp.length > 0) {
+        html += `<div class="trigger-info">
+          <div class="trigger-info-title">판정 근거</div>
+          <ul class="trigger-list">`;
+        if (d.triggers.ctp.length > 0) html += `<li><strong>안전관리계획서:</strong> ${d.triggers.ctp.join(', ')}</li>`;
+        if (d.triggers.smp.length > 0) html += `<li><strong>소규모안전관리계획서:</strong> ${d.triggers.smp.join(', ')}</li>`;
+        if (d.triggers.hrp.length > 0) html += `<li><strong>유해위험방지계획서:</strong> ${d.triggers.hrp.join(', ')}</li>`;
+        html += `</ul></div>`;
+      }
+
+      if (['extension', 'rebuild', 'repair'].includes(d.constructionType)) {
+        html += `<div class="alert-box warning"><span class="alert-icon">⚠️</span><div class="alert-content"><div class="alert-title">참고</div><div class="alert-text">증축·개축·대수선 공사는 기존 건물 상태에 따라 달라질 수 있습니다.</div></div></div>`;
+      }
+
+      if (myDocs.length > 0) {
+        const phaseOrder = ['plan', 'design', 'pre', 'start', 'during', 'end'];
+        const groupedDocs = {};
+        phaseOrder.forEach(p => groupedDocs[p] = []);
+        myDocs.forEach(doc => { if (groupedDocs[doc.phase]) groupedDocs[doc.phase].push(doc); });
+
+        html += `<div class="timeline"><div class="timeline-header"><div class="timeline-title">내가 작성할 서류</div><div class="timeline-count">${myDocs.length}건</div></div>`;
+
+        phaseOrder.forEach(phase => {
+          if (groupedDocs[phase].length > 0) {
+            html += `<div class="phase-group"><div class="phase-group-header ${PHASE_CLASS[phase]}"><span>${PHASE_NAMES[phase]}</span><span class="phase-group-count">${groupedDocs[phase].length}건</span></div><div class="phase-group-body">`;
+            groupedDocs[phase].forEach(doc => {
+              const trigger = doc.triggerDesc ? doc.triggerDesc(d) : '';
+              html += `<div class="doc-item"><div class="doc-info"><div class="doc-name">${doc.name}</div><div class="doc-law">${doc.law}</div>${trigger ? `<div class="doc-trigger">${trigger}</div>` : ''}</div>${doc.toPhase ? `<span class="doc-arrow">→</span><span class="doc-target">${doc.toPhase}</span>` : ''}</div>`;
+            });
+            html += `</div></div>`;
+          }
+        });
+        html += `</div>`;
+      }
+
+      ['client', 'designer', 'contractor'].forEach(role => {
+        if (role !== selectedRole && fromDocs[role].length > 0) {
+          html += `<div class="request-section"><div class="request-header"><span class="request-icon">${ROLE_ICONS[role]}</span><span class="request-title">${ROLE_NAMES[role]}에게 받을 서류</span><span class="request-count">${fromDocs[role].length}건</span></div><div class="request-body">`;
+          fromDocs[role].forEach(doc => {
+            html += `<div class="request-item"><div class="request-doc"><div class="request-doc-name">${doc.name}</div><div class="request-doc-law">${doc.law}</div></div><span class="request-timing">← ${doc.toPhase || PHASE_NAMES[doc.phase]}</span></div>`;
+          });
+          html += `</div></div>`;
+        }
+      });
+
+      ['client', 'designer', 'contractor'].forEach(role => {
+        if (role !== selectedRole && toDocs[role].length > 0) {
+          html += `<div class="request-section"><div class="request-header"><span class="request-icon">${ROLE_ICONS[role]}</span><span class="request-title">${ROLE_NAMES[role]}에게 제출할 서류</span><span class="request-count">${toDocs[role].length}건</span></div><div class="request-body">`;
+          toDocs[role].forEach(doc => {
+            html += `<div class="request-item"><div class="request-doc"><div class="request-doc-name">${doc.name}</div><div class="request-doc-law">${doc.law}</div></div><span class="request-timing">→ ${doc.toPhase || ''}</span></div>`;
+          });
+          html += `</div></div>`;
+        }
+      });
+
+      html += `
+        <div class="cta-section">
+          <div class="cta-title">서류 작성이 필요하시면</div>
+          <div class="cta-subtitle">더베스트안전이 함께합니다</div>
+          <div class="cta-features">
+            <span class="cta-feature">1영업일 내 견적</span>
+            <span class="cta-feature">등급 보장 후불제</span>
+            <span class="cta-feature">전문가 직접 작성</span>
+          </div>
+          <button class="cta-btn" onclick="openQuoteModal()">견적 문의하기</button>
+        </div>
+        <div class="btn-group" style="margin-top:24px;">
+          <button class="btn btn-secondary" onclick="goToInput()">← 조건 수정</button>
+          <button class="btn btn-secondary" onclick="goToRole()">역할 변경</button>
+          <button class="btn btn-primary" onclick="window.print()">출력하기</button>
+        </div>
+      `;
+
+      document.getElementById('result-content').innerHTML = html;
+    }
+
+    // ========== 모달 ==========
+    function openQuoteModal() {
+      const d = currentData;
+      const ctNames = { new:'신축', extension:'증축', rebuild:'개축', repair:'대수선', remodel:'리모델링', demolition:'해체' };
+      document.getElementById('modal-auto-info').innerHTML = `• 역할: ${ROLE_NAMES[selectedRole]}<br>• 공사: ${ctNames[d.constructionType]} / ${d.projectCost}억 / ${d.floorsAbove}층 / ${d.totalArea.toLocaleString()}㎡<br>• 서류: ${myDocs.length}건`;
+      document.getElementById('quoteModal').classList.add('show');
+    }
+
+    function closeModal() { document.getElementById('quoteModal').classList.remove('show'); }
+    function openCivilQuoteModal() { document.getElementById('civilQuoteModal').classList.add('show'); }
+    function closeCivilModal() { document.getElementById('civilQuoteModal').classList.remove('show'); }
+
+    function sendQuote() {
+      const name = document.getElementById('quoteName').value.trim();
+      const company = document.getElementById('quoteCompany').value.trim();
+      const contact = document.getElementById('quoteContact').value.trim();
+      const phone = document.getElementById('quotePhone').value.trim().replace(/-/g, '');
+      const email = document.getElementById('quoteEmail').value.trim();
+      const note = document.getElementById('quoteNote').value.trim();
+
+      if (!name || !contact || !phone) { alert('필수 항목을 입력해주세요.'); return; }
+
+      const d = currentData;
+      const ctNames = { new:'신축', extension:'증축', rebuild:'개축', repair:'대수선', remodel:'리모델링', demolition:'해체' };
+      const serviceMap = { 'ctp':'안전관리계획서', 'smp':'소규모안전관리계획서', 'hrp':'유해위험방지계획서', 'constructionSafetyLedger':'안전보건대장', 'dfs':'설계안전검토보고서(DFS)', 'eduSafety':'교육시설안전성평가' };
+      const services = myDocs.filter(doc => serviceMap[doc.id]).map(doc => serviceMap[doc.id]).filter((v,i,a) => a.indexOf(v)===i).join(',');
+      const triggerInfo = [];
+      if (d.triggers.ctp.length > 0) triggerInfo.push(`안전관리계획서: ${d.triggers.ctp.join(', ')}`);
+      if (d.triggers.smp.length > 0) triggerInfo.push(`소규모: ${d.triggers.smp.join(', ')}`);
+      if (d.triggers.hrp.length > 0) triggerInfo.push(`유해위험방지: ${d.triggers.hrp.join(', ')}`);
+
+      const content = `[법정서류 판정 v8.0]\n\n■ 공사정보\n- 공사명: ${name}\n- 종류: ${ctNames[d.constructionType]}\n- 발주: ${d.clientType==='public'?'공공':'민간'}\n- 금액: ${d.projectCost}억\n- 연면적: ${d.totalArea.toLocaleString()}㎡\n- 층수: 지상${d.floorsAbove}/지하${d.floorsBelow}\n- 높이: ${d.buildingHeight}m\n- 굴착: ${d.excavationDepth}m\n\n■ 역할: ${ROLE_NAMES[selectedRole]}\n\n■ 트리거\n${triggerInfo.join('\n')}\n\n■ 서류 (${myDocs.length}건)\n${myDocs.map(d=>'• '+d.name).join('\n')}${note?'\n\n■ 요청사항\n'+note:''}`;
+
+      const params = new URLSearchParams({ source:'legal-docs-v7', name:contact, phone, email, company, services, content });
+      window.location.href = `https://thebestsafety.imweb.me/inquiry?${params.toString()}`;
+    }
+
+    function sendCivilQuote() {
+      const name = document.getElementById('civilName').value.trim();
+      const civilType = document.getElementById('civilType').value;
+      const cost = document.getElementById('civilCost').value;
+      const company = document.getElementById('civilCompany').value.trim();
+      const contact = document.getElementById('civilContact').value.trim();
+      const phone = document.getElementById('civilPhone').value.trim().replace(/-/g, '');
+      const note = document.getElementById('civilNote').value.trim();
+
+      if (!name || !civilType || !contact || !phone) { alert('필수 항목을 입력해주세요.'); return; }
+
+      const civilTypeNames = { road:'도로', bridge:'교량', tunnel:'터널', sewer:'하수도', drainage:'배수로', dam:'댐', port:'항만', other:'기타' };
+      const content = `[토목공사 상담 v8.0]\n\n■ 공사정보\n- 공사명: ${name}\n- 종류: ${civilTypeNames[civilType]}\n- 금액: ${cost?cost+'억':'미정'}${note?'\n\n■ 문의\n'+note:''}`;
+
+      const params = new URLSearchParams({ source:'legal-docs-civil-v7', name:contact, phone, company, services:'기타', content });
+      window.location.href = `https://thebestsafety.imweb.me/inquiry?${params.toString()}`;
+    }
+  </script>
+</body>
+</html>
