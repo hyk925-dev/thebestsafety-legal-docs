@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBSafe 시스템 설계 문서</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-light: #3b82f6;
+      --bg: #0f172a;
+      --bg-light: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    nav {
+      background: var(--bg-light);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+    }
+
+    nav ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      list-style: none;
+      justify-content: center;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    nav a:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    section {
+      background: var(--bg-light);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border);
+    }
+
+    h2 {
+      color: var(--primary-light);
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    h3 {
+      color: var(--text);
+      font-size: 1.125rem;
+      margin: 1.5rem 0 1rem;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    code {
+      background: rgba(0,0,0,0.3);
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.875em;
+      color: #f472b6;
+    }
+
+    pre {
+      background: #0d1117;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      border: 1px solid var(--border);
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: var(--text);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .card {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+    }
+
+    .card h4 {
+      color: var(--primary-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-blue { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-green { background: rgba(34,197,94,0.2); color: #4ade80; }
+    .badge-purple { background: rgba(168,85,247,0.2); color: #c084fc; }
+    .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; }
+
+    .diagram {
+      background: #0d1117;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      color: #7dd3fc;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    .tech-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      header { padding: 2rem 1rem; }
+      header h1 { font-size: 1.75rem; }
+      section { padding: 1.25rem; }
+      nav ul { flex-direction: column; }
+      nav a { display: block; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TBSafe</h1>
+    <p>더베스트안전 통합 전산망 시스템 설계 문서</p>
+    <span class="version-badge">v1.9.4</span>
+  </header>
+
+  <div class="container">
+    <nav>
+      <ul>
+        <li><a href="#overview">개요</a></li>
+        <li><a href="#tech">기술 스택</a></li>
+        <li><a href="#database">데이터베이스</a></li>
+        <li><a href="#api">API</a></li>
+        <li><a href="#features">기능</a></li>
+        <li><a href="#pages">화면</a></li>
+        <li><a href="#deploy">배포</a></li>
+        <li><a href="#history">히스토리</a></li>
+      </ul>
+    </nav>
+
+    <section id="overview">
+      <h2>1. 시스템 개요</h2>
+      <p>건설현장 안전관리 컨설팅 업무를 위한 통합 전산 시스템입니다. 고객사/현장 관리, 월간 안전평가, 법정서류 판정, 알림 발송 등 핵심 업무를 디지털화합니다.</p>
+
+      <h3>주요 사용자</h3>
+      <table>
+        <tr>
+          <th>역할</th>
+          <th>권한</th>
+          <th>설명</th>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">admin</span></td>
+          <td>전체</td>
+          <td>시스템 관리자, 모든 기능 접근</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">user</span></td>
+          <td>업무</td>
+          <td>더베스트안전 직원, 고객사/현장 관리</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">client</span></td>
+          <td>제한</td>
+          <td>고객사 담당자, 자사 데이터만 조회</td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="tech">
+      <h2>2. 기술 스택</h2>
+
+      <h3>프론트엔드</h3>
+      <div class="tech-stack">
+        <span class="tech-item">Next.js 14</span>
+        <span class="tech-item">TypeScript</span>
+        <span class="tech-item">Tailwind CSS</span>
+        <span class="tech-item">React</span>
+        <span class="tech-item">Vercel</span>
+      </div>
+
+      <h3>백엔드</h3>
+      <div class="tech-stack">
+        <span class="tech-item">Express.js</span>
+        <span class="tech-item">TypeScript</span>
+        <span class="tech-item">PostgreSQL</span>
+        <span class="tech-item">JWT</span>
+        <span class="tech-item">ExcelJS</span>
+        <span class="tech-item">Nodemailer</span>
+        <span class="tech-item">Twilio</span>
+        <span class="tech-item">Railway</span>
+      </div>
+
+      <h3>아키텍처</h3>
+      <div class="diagram">[Vercel/Web] ─── HTTPS ───> [Railway/API] ───> [Railway/PostgreSQL]
+       │                              │
+       │                              ├── Nodemailer (SMTP)
+       │                              └── Twilio (SMS)
+       │
+       └── Static Assets (Next.js)</div>
+    </section>
+
+    <section id="database">
+      <h2>3. 데이터베이스 스키마</h2>
+
+      <h3>핵심 테이블 관계</h3>
+      <div class="diagram">┌─────────────┐      ┌─────────────┐      ┌──────────────────┐
+│   users     │      │   clients   │      │      sites       │
+├─────────────┤      ├─────────────┤      ├──────────────────┤
+│ id (PK)     │      │ id (PK)     │◄────►│ id (PK)          │
+│ email       │      │ name        │      │ client_id (FK)   │
+│ password    │      │ business    │      │ name             │
+│ name        │      │ contract_*  │      │ contract_amount  │
+│ role        │──────│ status      │      │ safety_manager   │
+└─────────────┘      └─────────────┘      └──────────────────┘
+                                                   │
+                     ┌─────────────────────────────┼─────────────────┐
+                     │                             │                 │
+                     ▼                             ▼                 ▼
+          ┌──────────────────┐          ┌─────────────┐    ┌─────────────┐
+          │ monthly_assess.  │          │   alerts    │    │   uploads   │
+          ├──────────────────┤          ├─────────────┤    ├─────────────┤
+          │ site_id (FK)     │          │ site_id     │    │ site_id     │
+          │ year_month       │          │ deadline    │    │ file_path   │
+          │ area1~5_rate     │          │ timing[]    │    │ status      │
+          └──────────────────┘          └─────────────┘    └─────────────┘</div>
+
+      <h3>전체 테이블 목록</h3>
+      <table>
+        <tr>
+          <th>테이블</th>
+          <th>설명</th>
+          <th>주요 컬럼</th>
+        </tr>
+        <tr><td>users</td><td>사용자</td><td>email, password_hash, role, client_id</td></tr>
+        <tr><td>clients</td><td>고객사</td><td>name, business_type, contract_start/end</td></tr>
+        <tr><td>sites</td><td>현장</td><td>client_id, name, address, contract_amount</td></tr>
+        <tr><td>monthly_assessments</td><td>월간평가</td><td>site_id, year_month, area1~5_rate</td></tr>
+        <tr><td>alerts</td><td>알림설정</td><td>site_id, deadline_day, timing, contact_*</td></tr>
+        <tr><td>alert_templates</td><td>알림템플릿</td><td>name, template_type, subject, body</td></tr>
+        <tr><td>uploads</td><td>업로드</td><td>site_id, file_type, file_path, status</td></tr>
+        <tr><td>legal_document_checks</td><td>법정서류판정</td><td>site_id, required_documents, triggers</td></tr>
+        <tr><td>quotes</td><td>견적서</td><td>client_id, site_id, total, status</td></tr>
+        <tr><td>sh_evaluations</td><td>SH평가</td><td>client_id, score_category1~4, grade</td></tr>
+      </table>
+    </section>
+
+    <section id="api">
+      <h2>4. API 엔드포인트</h2>
+
+      <h3>인증 (Auth)</h3>
+      <table>
+        <tr><th>Method</th><th>Endpoint</th><th>설명</th><th>권한</th></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/auth/login</td><td>로그인</td><td>Public</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/auth/register</td><td>회원가입</td><td>Admin</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/auth/init-admin</td><td>초기 관리자</td><td>Public (1회)</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/auth/me</td><td>내 정보</td><td>Auth</td></tr>
+        <tr><td><span class="badge badge-orange">PUT</span></td><td>/api/auth/password</td><td>비밀번호 변경</td><td>Auth</td></tr>
+      </table>
+
+      <h3>고객사/현장/평가</h3>
+      <table>
+        <tr><th>Method</th><th>Endpoint</th><th>설명</th></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/clients</td><td>고객사 목록</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/sites</td><td>현장 목록</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/assessments</td><td>평가 목록</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/clients</td><td>고객사 생성</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/sites</td><td>현장 생성</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/assessments</td><td>평가 생성</td></tr>
+      </table>
+
+      <h3>알림</h3>
+      <table>
+        <tr><th>Method</th><th>Endpoint</th><th>설명</th></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/alerts</td><td>알림 목록</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/alert-templates</td><td>템플릿 목록</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/alerts/:id/send</td><td>개별 발송</td></tr>
+        <tr><td><span class="badge badge-green">POST</span></td><td>/api/alerts/send-due</td><td>일괄 발송</td></tr>
+      </table>
+
+      <h3>내보내기</h3>
+      <table>
+        <tr><th>Method</th><th>Endpoint</th><th>설명</th></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/export/assessments/excel</td><td>평가 Excel</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/export/sites/excel</td><td>현장 Excel</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/export/clients/excel</td><td>고객사 Excel</td></tr>
+        <tr><td><span class="badge badge-blue">GET</span></td><td>/api/export/site-report/:id/excel</td><td>현장보고서</td></tr>
+      </table>
+    </section>
+
+    <section id="features">
+      <h2>5. 주요 기능</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>5대 영역 월간평가</h4>
+          <p>안전보건 조직, 근로자 참여, 위험성 평가, 안전보건 교육, 비상 대응 체계 - 영역별 시행률 평가 및 등급 산정</p>
+        </div>
+        <div class="card">
+          <h4>법정서류 판정</h4>
+          <p>공사 조건(금액, 층수, 높이, 면적 등)에 따라 필수 법정서류 자동 판정</p>
+        </div>
+        <div class="card">
+          <h4>알림 시스템</h4>
+          <p>마감일 기준 D-3, D-1, 당일 알림. 이메일/SMS 발송. 템플릿 변수 치환 지원</p>
+        </div>
+        <div class="card">
+          <h4>SH평가</h4>
+          <p>안전보건 경영시스템 인증 평가. 4대 영역 + 가점, 등급 산정 (S~D)</p>
+        </div>
+        <div class="card">
+          <h4>Excel 내보내기</h4>
+          <p>평가, 현장, 고객사 데이터를 Excel 파일로 내보내기</p>
+        </div>
+        <div class="card">
+          <h4>대시보드</h4>
+          <p>영역별 평균, 월별 추세 차트, 마감 임박 알림, 최근 평가 현황</p>
+        </div>
+      </div>
+
+      <h3>평가 등급 기준</h3>
+      <table>
+        <tr><th>등급</th><th>시행률</th><th>색상</th></tr>
+        <tr><td>우수</td><td>80% 이상</td><td style="color:#22c55e">녹색</td></tr>
+        <tr><td>양호</td><td>60% 이상</td><td style="color:#3b82f6">파랑</td></tr>
+        <tr><td>보통</td><td>40% 이상</td><td style="color:#eab308">노랑</td></tr>
+        <tr><td>미흡</td><td>40% 미만</td><td style="color:#ef4444">빨강</td></tr>
+      </table>
+    </section>
+
+    <section id="pages">
+      <h2>6. 화면 구성</h2>
+
+      <table>
+        <tr><th>경로</th><th>페이지</th><th>설명</th></tr>
+        <tr><td><code>/login</code></td><td>로그인</td><td>인증</td></tr>
+        <tr><td><code>/dashboard</code></td><td>대시보드</td><td>메인, 통계, 빠른메뉴</td></tr>
+        <tr><td><code>/clients</code></td><td>고객사</td><td>목록, 등록, 수정</td></tr>
+        <tr><td><code>/sites</code></td><td>현장</td><td>목록, 등록, 수정</td></tr>
+        <tr><td><code>/sites/[id]</code></td><td>현장 상세</td><td>분석, 추세, 알림</td></tr>
+        <tr><td><code>/assessments</code></td><td>월간평가</td><td>목록, 입력</td></tr>
+        <tr><td><code>/legal-check</code></td><td>법정서류</td><td>판정 입력, 결과</td></tr>
+        <tr><td><code>/quotes</code></td><td>견적</td><td>목록, 작성</td></tr>
+        <tr><td><code>/alerts</code></td><td>알림</td><td>설정, 템플릿, 발송</td></tr>
+        <tr><td><code>/uploads</code></td><td>업로드</td><td>파일 관리</td></tr>
+        <tr><td><code>/reports</code></td><td>보고서</td><td>월간 보고서</td></tr>
+        <tr><td><code>/sh-evaluation</code></td><td>SH평가</td><td>평가 입력, 조회</td></tr>
+        <tr><td><code>/users</code></td><td>사용자</td><td>관리 (관리자)</td></tr>
+        <tr><td><code>/activity</code></td><td>활동로그</td><td>내역 (관리자)</td></tr>
+        <tr><td><code>/settings</code></td><td>설정</td><td>비밀번호, 내보내기</td></tr>
+      </table>
+    </section>
+
+    <section id="deploy">
+      <h2>7. 배포 정보</h2>
+
+      <h3>URL</h3>
+      <table>
+        <tr><th>서비스</th><th>URL</th></tr>
+        <tr><td>API</td><td><code>https://api-production-0ee5.up.railway.app</code></td></tr>
+        <tr><td>Health Check</td><td><code>GET /health</code></td></tr>
+        <tr><td>Web</td><td>(Vercel 배포 주소)</td></tr>
+      </table>
+
+      <h3>초기 설정</h3>
+      <pre><code># 1. 마이그레이션 실행
+curl -X POST https://api-production-0ee5.up.railway.app/migrate \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"tbsafe-init-2026"}'
+
+# 2. 관리자 계정 생성 (최초 1회)
+curl -X POST https://api-production-0ee5.up.railway.app/api/auth/init-admin \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"your-password","name":"관리자"}'</code></pre>
+
+      <h3>환경변수 (API)</h3>
+      <pre><code>DATABASE_URL=postgresql://...
+JWT_SECRET=your-jwt-secret
+MIGRATE_SECRET=tbsafe-init-2026
+
+# 이메일 (선택)
+SMTP_HOST=smtp.gmail.com
+SMTP_USER=your-email
+SMTP_PASS=your-app-password
+
+# SMS (선택)
+TWILIO_ACCOUNT_SID=your-sid
+TWILIO_AUTH_TOKEN=your-token
+TWILIO_FROM_NUMBER=+1234567890</code></pre>
+    </section>
+
+    <section id="history">
+      <h2>8. 버전 히스토리</h2>
+
+      <table>
+        <tr><th>버전</th><th>날짜</th><th>주요 변경</th></tr>
+        <tr><td><span class="badge badge-blue">1.9.4</span></td><td>2026-01</td><td>사용자 관리 강화 (비밀번호 초기화/삭제)</td></tr>
+        <tr><td>1.9.3</td><td>2026-01</td><td>활동 로그 API</td></tr>
+        <tr><td>1.9.2</td><td>2026-01</td><td>대시보드 향상 (추세/알림 위젯)</td></tr>
+        <tr><td>1.9.1</td><td>2026-01</td><td>알림 템플릿 관리</td></tr>
+        <tr><td>1.9.0</td><td>2026-01</td><td>Excel 내보내기, 현장 상세 분석</td></tr>
+        <tr><td>1.8.0</td><td>2026-01</td><td>API 모듈화 리팩토링</td></tr>
+        <tr><td>1.7.0</td><td>2026-01</td><td>SH평가, 법정서류 판정</td></tr>
+      </table>
+    </section>
+  </div>
+
+  <footer>
+    <p>TBSafe &copy; 2026 더베스트안전 | Developed with Claude Code</p>
+    <p>Repository: <a href="https://github.com/hyk925-dev/tbsafe" style="color:var(--primary-light)">github.com/hyk925-dev/tbsafe</a></p>
+  </footer>
+</body>
+</html>
