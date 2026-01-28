@@ -11,7 +11,7 @@
 thebestsafety/
 ├── 법정서류판정/           # 법정서류 판정 시스템
 │   ├── v8.0/              # 최신 버전 (2026-01-28)
-│   │   └── legal-check.html   # 독립 실행 HTML (아임웹용)
+│   │   └── construction-legal-docs-v8.0.html   # v7.0 기반 업그레이드
 │   ├── v7.0/              # 이전 버전
 │   │   ├── construction-legal-docs-v7.0-final.html
 │   │   └── 업데이트노트.md
@@ -57,14 +57,13 @@ thebestsafety/
 **법령 기준**: 2025.10.1 시행령
 **기반**: Safety Law OS v2.2
 
-**v8.0 변경사항**:
-- 아임웹 호환용 독립 HTML 파일
-- 새 창 열기 없이 같은 페이지 내 동작
-- CI 컬러 적용 (#162759, #929294, #bebebe)
+**v8.0 변경사항** (v7.0 기반):
+- CI 컬러 업데이트 (#162759, #929294, #bebebe)
 - 가설구조물 항목 설명 보강:
-  - 외부작업용 일체형: SWC, RCS, ACS, Workflat, Form
-  - 복합형(현장제작): 합벽지지대, 라이닝폼, 작업대차 등
+  - 외부작업용 일체형: SWC, RCS, ACS, Workflat, Form 추가
+  - 복합형(현장제작): 합벽지지대, 라이닝폼, 작업대차 등 추가
 - CTP+HRP 통합 안내 제거
+- 기존 v7.0 기능 유지 (4단계 위자드, 역할별 분기, 인쇄 최적화)
 
 **배포**: www.thebestsafety.co.kr
 
